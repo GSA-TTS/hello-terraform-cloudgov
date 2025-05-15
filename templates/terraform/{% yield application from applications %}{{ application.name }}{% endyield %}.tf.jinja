@@ -1,0 +1,181 @@
+locals {
+    {{ application.name }}_app_name        = "{{ application.name }}"
+}
+
+### variables
+
+variable "{{ application.name }}_custom_domain_name" {
+  type        = string
+  default     = null
+  description = "The custom domain name to associate with the app. Leave as null to disable the domain service and use an *.app.cloud.gov route"
+}
+variable "{{ application.name }}_host_name" {
+  type        = string
+  default     = null
+  description = "An optional hostname to prepend to either the custom domain name or app.cloud.gov"
+}
+
+###
+# TODO: These variables should be keyed off the application.type
+variable "{{ application.name }}_env" {
+  type        = string
+  description = "The RAILS_ENV to set for the {{ application.name }} app (staging or production)"
+}
+
+variable "{{ application.name }}_rails_master_key" {
+  type        = string
+  sensitive   = true
+  description = "config/master.key"
+}
+
+variable "{{ application.name }}_web_instances" {
+  type        = number
+  default     = 1
+  description = "The number of web processes instances in the {{ application.name }} app"
+}
+
+variable "{{ application.name }}_web_memory" {
+  type        = string
+  default     = "256M"
+  description = "The amount of memory for each web process instance for the {{ application.name }} app"
+}
+{% if has_redis %}
+variable "{{ application.name }}_worker_instances" {
+  type        = number
+  default     = 1
+  description = "The number of instances of the worker process instances in the {{ application.name }} app"
+}
+
+variable "worker_memory" {
+  type        = string
+  default     = "256M"
+  description = "The amount of memory for each worker process instance in the {{ application.name }} app"
+}
+{% endif %}
+###
+
+### application
+
+data "archive_file" "{{ application.name }}-src" {
+  type        = "zip"
+  source_dir  = "${path.module}/../{{ application.name }}"
+  output_path = "${path.module}/dist/{{ application.name }}.zip"
+  excludes = [
+    ".git*",
+    ".circleci/*",
+    ".bundle/*",
+    "node_modules/*",
+    "tmp/**/*",
+    "log/*",
+  ]
+}
+
+resource "cloudfoundry_app" "{{ application.name }}" {
+  name       = "${ local.{{ application.name }}_app_name }-${var.env}"
+  space_name = var.cf_space_name
+  org_name   = local.cf_org_name
+
+  path             = data.archive_file.{{ application.name }}-src.output_path
+  source_code_hash = data.archive_file.{{ application.name }}-src.output_base64sha256
+  buildpacks       = ["{{ application.buildpack }}"]
+  strategy         = "rolling"
+
+  environment = {
+    ###
+    # TODO: get this from the application directory somehow
+    # Or, generate a static block here based on the application.type
+    # What's here is what `rails-template` inserts
+    RAILS_ENV                = var.env
+    RAILS_MASTER_KEY         = var.rails_master_key
+    RAILS_LOG_TO_STDOUT      = "true"
+    RAILS_SERVE_STATIC_FILES = "true"
+  }
+  ###
+
+  ###
+  # TODO: get this from the application directory somehow
+  # Or, generate a static block here based on the application.type
+  # What's here is what `rails-template` inserts
+  processes = [
+    {
+      type                       = "web"
+      instances                  = var.web_instances
+      memory                     = var.web_memory
+      health_check_http_endpoint = "/up"
+      health_check_type          = "http"
+      command                    = "./bin/rake cf:on_first_instance db:migrate && exec env HTTP_PORT=$PORT ./bin/thrust ./bin/rails server"
+    }
+  ]
+  ###
+
+  service_bindings = [
+{% if has_redis %}    { service_instance = "${local.app_name}-redis-${var.env}" },{% endif %}
+{% if has_storage %}    { service_instance = "${local.app_name}-s3-${var.env}" },{% endif %}
+    { service_instance = "${local.app_name}-rds-${var.env}" }
+  ]
+
+  # TODO: Use implicit references to resources so explicit dependencies
+  # aren't needed
+  depends_on = [
+{% if has_redis %}    module.redis,{% endif %}
+{% if has_storage %}    module.s3,{% endif %}
+{% if manage_spaces %}    module.app_space,{% endif %}
+    module.database
+  ]
+}
+
+{% if has_storage %}
+# Probably need to scan files that are kept in S3
+resource "cloudfoundry_network_policy" "clamav_routing" {
+  policies = [{
+    source_app      = cloudfoundry_app.{{ application.name }}.id
+    destination_app = module.clamav.app_id
+    port            = "61443"
+  }]
+}
+{% endif %}
+
+### routes
+
+###########################################################################
+{% if manage_spaces %}
+# Before setting var.custom_domain_name, ensure the ACME challenge record has been created:
+# See https://cloud.gov/docs/services/external-domain-service/#how-to-create-an-instance-of-this-service
+{% else %}
+# Before setting var.custom_domain_name, perform the following steps:
+# 1) Domain must be manually created by an OrgManager:
+#     cf create-domain var.cf_org_name var.domain_name
+# 2) ACME challenge record must be created.
+#     See https://cloud.gov/docs/services/external-domain-service/#how-to-create-an-instance-of-this-service
+{% endif %}
+###########################################################################
+module "domain" {
+  count  = (var.custom_domain_name == null ? 0 : 1)
+  source = "github.com/gsa-tts/terraform-cloudgov//domain?ref=v2.3.0"
+
+  cf_org_name   = local.cf_org_name
+  cf_space      = {% if manage_spaces %}module.app_space.space{% else %}data.cloudfoundry_space.app_space{% endif %}
+  cdn_plan_name = "domain"
+  domain_name   = var.custom_domain_name
+  create_domain = {{ "true" if manage_spaces else "false" }}
+  app_ids       = [cloudfoundry_app.{{ application.name }}.id]
+  host_name     = var.host_name
+  {% if manage_spaces %}
+  # depends_on line is required only for initial creation and destruction. It can be commented out for updates if you see unwanted cascading effects
+  depends_on = [module.app_space]
+  {% endif %}
+}
+
+module "app_route" {
+  count  = (var.custom_domain_name == null ? 1 : 0)
+  source = "github.com/gsa-tts/terraform-cloudgov//app_route?ref=v2.3.0"
+
+  cf_org_name   = local.cf_org_name
+  cf_space_name = var.cf_space_name
+  app_ids       = [cloudfoundry_app.{{ application.name }}.id]
+  hostname      = coalesce(var.host_name, "{{ application.name }}-{{ env }}")
+  {% if manage_spaces %}
+  # depends_on line is required only for initial creation and destruction. It can be commented out for updates if you see unwanted cascading effects
+  depends_on = [module.app_space]
+  {% endif %}
+}
