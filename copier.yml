@@ -1,0 +1,70 @@
+system_name:
+  help: "What is the system name?"
+  default: "my-system"
+  type: str
+
+manage_spaces:
+  help: "Auto-manage cloud.gov spaces?"
+  default: true
+  type: bool
+
+cloud_gov_organization:
+  when: "{{manage_spaces}}"
+  help: "What is the cloud.gov organization name?"
+  default: "my-org"
+  type: str
+
+# TODO: We should just ask for a space-separated list of spaces
+# and then designate which one is production
+
+cloud_gov_staging_space:
+  when: "{{manage_spaces}}"
+  help: "What is the cloud.gov staging space name?"
+  default: "staging"
+  type: str
+
+cloud_gov_production_space:
+  when: "{{manage_spaces}}"
+  help: "What is the cloud.gov production space name?"
+  default: "production"
+  type: str
+
+applications:
+  help: "Description of the applications (e.g., '[{\"name\": \"flask-api\", \"type\": \"flask\", \"port\": 5000}, {\"name\": \"express-web\", \"type\": \"express\", \"port\": 3000}]')"
+  default:
+    '[
+      {"name": "frontend", "type": "astro", "buildpack": "static"}, 
+      {"name": "backend", "type": "django", "buildpack": "python"}
+    ]' 
+  type: json
+
+_subdirectory: "templates/terraform"
+_exclude:
+  # When managing an org's spaces, exclude the sandbox bootstrap files
+  - "{% if manage_spaces == true %}bootstrap/sandbox.tf{% endif %}"
+  - "{% if manage_spaces == true %}bootstrap/templates/sandbox_imports.tf.tftpl{% endif %}"
+  # When using a sandbox, exclude the org bootstrap files and production-specific variables
+  - "{% if manage_spaces != true %}bootstrap/org.tf{% endif %}"
+  - "{% if manage_spaces != true %}bootstrap/templates/org_imports.tf.tftpl{% endif %}"
+  - "{% if manage_spaces != true %}bootstrap/users.auto.tfvars{% endif %}"
+  - "{% if manage_spaces != true %}production.tfvars{% endif %}"
+
+# # A DRYer version of the above... doesn't work!
+# # See discussion at https://github.com/orgs/copier-org/discussions/2144
+# _exclude: |
+#   {%- if manage_spaces == true %}
+#   # When managing an org's spaces, exclude the sandbox bootstrap files
+#   - bootstrap/sandbox.tf
+#   - bootstrap/templates/sandbox_imports.tf.tftpl
+#   {%- else %}
+#   # When using a sandbox, exclude the org bootstrap files and production-specific variables
+#   - bootstrap/org.tf
+#   - bootstrap/templates/org_imports.tf.tftpl
+#   - bootstrap/users.auto.tfvars
+#   - production.tfvars
+#   {%- endif %}
+
+_tasks:
+  # Why isn't this showing any output
+  - when: "{{ _copier_operation == 'copy' }}"
+    command: "git init ."

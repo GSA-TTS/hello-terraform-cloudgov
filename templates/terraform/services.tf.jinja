@@ -1,0 +1,56 @@
+# Services shared by multiple apps
+
+module "database" {
+  source = "github.com/gsa-tts/terraform-cloudgov//database?ref=v2.3.0"
+
+  cf_space_id   = {% if manage_spaces %}module.app_space.space_id{% else %}data.cloudfoundry_space.app_space.id{% endif %}
+  name          = "{{ system_name }}-rds-{{ env }}"
+  rds_plan_name = var.rds_plan_name
+  {% if manage_spaces %}
+  # depends_on line is required only for initial creation and destruction. It can be commented out for updates if you see unwanted cascading effects
+  depends_on = [module.app_space]
+  {% endif %}
+}
+{% if has_redis %}
+module "redis" {
+  source = "github.com/gsa-tts/terraform-cloudgov//redis?ref=v2.3.0"
+
+  cf_space_id     = {% if manage_spaces %}module.app_space.space_id{% else %}data.cloudfoundry_space.app_space.id{% endif %}
+
+  name            = "{{ system_name }}-redis-{{ env }}"
+  redis_plan_name = var.redis_plan_name
+  {% if manage_spaces %}
+  # depends_on line is required only for initial creation and destruction. It can be commented out for updates if you see unwanted cascading effects
+  depends_on = [module.app_space]
+  {% endif %}
+}
+{% endif %}
+{% if has_storage %}
+module "s3" {
+  source = "github.com/gsa-tts/terraform-cloudgov//s3?ref=v2.3.0"
+
+  cf_space_id  = {% if manage_spaces %}module.app_space.space_id{% else %}data.cloudfoundry_space.app_space.id{% endif %}
+
+  name         = "{{ system_name }}-s3-{{ env }}"
+  s3_plan_name = var.s3_plan_name
+  {% if manage_spaces %}
+  # depends_on line is required only for initial creation and destruction. It can be commented out for updates if you see unwanted cascading effects
+  depends_on = [module.app_space]
+  {% endif %}
+}
+
+module "clamav" {
+  source = "github.com/gsa-tts/terraform-cloudgov//clamav?ref=v2.3.0"
+
+  cf_org_name   = local.cf_org_name
+  cf_space_name = var.cf_space_name
+  name          = "{{ system_name }}-clamapi-{{ env }}"
+  clamav_image  = "ghcr.io/gsa-tts/clamav-rest/clamav:latest"
+  max_file_size = "30M"
+  {% if manage_spaces %}
+  # depends_on line is required only for initial creation and destruction. It can be commented out for updates if you see unwanted cascading effects
+  depends_on = [module.app_space]
+  {% endif %}
+}
+{% endif %}
+

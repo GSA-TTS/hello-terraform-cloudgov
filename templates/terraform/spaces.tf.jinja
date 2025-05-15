@@ -1,0 +1,32 @@
+locals {
+  cf_org_name     = "{{ cloud_gov_organization }}"
+  space_deployers = setunion([var.cf_user], var.space_deployers)
+}
+{% if manage_spaces %}
+module "app_space" {
+  source = "github.com/gsa-tts/terraform-cloudgov//cg_space?ref=v2.3.0"
+
+  cf_org_name          = local.cf_org_name
+  cf_space_name        = var.cf_space_name
+  allow_ssh            = var.allow_space_ssh
+  deployers            = local.space_deployers
+  developers           = var.space_developers
+  auditors             = var.space_auditors
+  security_group_names = ["trusted_local_networks_egress"]
+}
+{% else %}
+data "cloudfoundry_org" "org" {
+  name = local.cf_org_name
+}
+data "cloudfoundry_space" "app_space" {
+  name = var.cf_space_name
+  org  = data.cloudfoundry_org.org.id
+}
+data "cloudfoundry_security_group" "trusted_egress_security_group" {
+  name = "trusted_local_networks_egress"
+}
+resource "cloudfoundry_security_group_space_bindings" "trusted_egress_binding" {
+  security_group = data.cloudfoundry_security_group.trusted_egress_security_group.id
+  running_spaces = [data.cloudfoundry_space.app_space.id]
+}
+{% endif %}
