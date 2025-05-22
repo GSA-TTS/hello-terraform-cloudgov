@@ -30,7 +30,7 @@ cloud_gov_spaces:
         {%- endif %}
   default: |-
         {% if manage_spaces == true -%}
-            dev staging production
+            dev staging prod
         {%- endif %}
   validator: "{% if cloud_gov_spaces|length == 0 %}Must specify at least one space name{% endif %}"
   type: str
