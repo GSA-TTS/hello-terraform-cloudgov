@@ -149,7 +149,7 @@ resource "cloudfoundry_network_policy" "clamav_routing" {
 #     See https://cloud.gov/docs/services/external-domain-service/#how-to-create-an-instance-of-this-service
 {% endif %}
 ###########################################################################
-module "domain" {
+module "{{ application.name }}-domain" {
   count  = (var.custom_domain_name == null ? 0 : 1)
   source = "github.com/gsa-tts/terraform-cloudgov//domain?ref=v2.3.0"
 
@@ -166,7 +166,7 @@ module "domain" {
   {% endif %}
 }
 
-module "app_route" {
+module "{{ application.name }}-app_route" {
   count  = (var.custom_domain_name == null ? 1 : 0)
   source = "github.com/gsa-tts/terraform-cloudgov//app_route?ref=v2.3.0"
 
