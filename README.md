@@ -9,7 +9,7 @@ It's usable standalone, but you'll have to explicitly answer questions about you
 
 ## Status
 
-Copying the template works, but the resulting Terraform module is not yet working.
+The resulting Terraform module can be bootstrapped. However, applying the module to create apps, services, etc does not yet work.
 
 ## Features
 - Provides utilities for bootstrapping Terraform state into a cloud.gov S3 bucket
