@@ -1,4 +1,8 @@
+- [ ] Combine the sandbox and org bootstrap methods to remove exclusion complexity
 - [ ] Add patterns to the .gitignore
 - [ ] Install terraform `fmt --recursive` pre-commit hook
-- [ ] Loop over environments rather than hardcoding production/staging(https://copier.readthedocs.io/en/stable/creating/#loop-over-lists-to-generate-files-and-directories)
-
+- [ ] Reference application-local modules rather than reusing a generic app.tf
+    - `hello-terraform-cloudgov` -> `hello-terraform-cloudgov-system`
+    - Add `hello-terraform-cloudgov-application`: Passed env vars and other framework-specific stuff, generates an app-specific Terraform module wrapping the application Terraform module 
+    - `hello-[astro|django|rails|drupal]` templates: If Terraform module is enabled, uses `hello-terraform-cloudgov-application` to generate a Terraform module
+    - `hello-terraform-cloudgov-system` -> no more `[app].tf`... instead, invokes all the application modules
