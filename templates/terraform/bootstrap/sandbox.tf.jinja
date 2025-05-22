@@ -19,6 +19,8 @@ variable "create_bot_secrets_file" {
 locals {
   org_name      = "{{ cloud_gov_organization }}"
   cf_space_name = "{{ cloud_gov_staging_space }}"
+  # s3_plan_name should be basic when holding production data, though basic-sandbox will make early iterations easier
+  s3_plan_name = "basic-sandbox"
 }
 
 data "cloudfoundry_org" "org" {
@@ -34,7 +36,7 @@ module "s3" {
 
   cf_space_id  = data.cloudfoundry_space.space.id
   name         = "{{ system_name }}-terraform-state"
-  s3_plan_name = "basic-sandbox"
+  s3_plan_name = local.s3_plan_name
 }
 
 data "cloudfoundry_service_plans" "cg_service_account" {
@@ -45,6 +47,8 @@ locals {
   sa_service_name    = "{{ system_name }}-cicd-deployer"
   sa_key_name        = "cicd-deployer-access-key"
   sa_bot_credentials = jsondecode(data.cloudfoundry_service_credential_binding.runner_sa_key.credential_bindings.0.credential_binding).credentials
+  sa_cf_username     = nonsensitive(local.sa_bot_credentials.username)
+  sa_cf_password     = local.sa_bot_credentials.password
 }
 resource "cloudfoundry_service_instance" "runner_service_account" {
   name         = local.sa_service_name
@@ -85,7 +89,9 @@ locals {
     "cloudfoundry_service_credential_binding.runner_sa_key" = cloudfoundry_service_credential_binding.runner_sa_key.id
   }
 
-  recreate_state_template = templatefile("${path.module}/templates/sandbox_imports.tf.tftpl", { import_map = local.import_map })
+  recreate_state_template = templatefile("${path.module}/templates/sandbox_imports.tf.tftpl", {
+    import_map    = local.import_map,
+  })
 }
 resource "local_file" "recreate_script" {
   content         = local.recreate_state_template
@@ -111,7 +117,7 @@ resource "local_sensitive_file" "bot_secrets_file" {
   content = templatefile("${path.module}/templates/bot_secrets.tftpl", {
     service_name = local.sa_service_name,
     key_name     = local.sa_key_name,
-    username     = local.sa_bot_credentials.username,
-    password     = local.sa_bot_credentials.password
+    username     = local.sa_cf_username,
+    password     = local.sa_cf_password
   })
 }

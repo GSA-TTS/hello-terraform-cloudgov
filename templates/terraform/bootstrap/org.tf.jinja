@@ -35,6 +35,10 @@ locals {
   # s3_plan_name should be basic when holding production data, though basic-sandbox will make early iterations easier
   s3_plan_name = "basic"
 }
+
+data "cloudfoundry_org" "org" {
+  name = local.org_name
+}
 module "mgmt_space" {
   source = "github.com/gsa-tts/terraform-cloudgov//cg_space?ref=v2.3.0"
 
@@ -79,9 +83,6 @@ data "cloudfoundry_service_credential_binding" "runner_sa_key" {
   name             = local.sa_key_name
   service_instance = cloudfoundry_service_instance.runner_service_account.id
   depends_on       = [cloudfoundry_service_credential_binding.runner_sa_key]
-}
-data "cloudfoundry_org" "org" {
-  name = local.org_name
 }
 data "cloudfoundry_user" "sa_user" {
   name = local.sa_cf_username
