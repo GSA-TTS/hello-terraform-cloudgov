@@ -21,7 +21,7 @@ variable "terraform_users" {
 }
 variable "mgmt_space_name" {
   type        = string
-  default     = "{{ cloud_gov_production_space }}-mgmt"
+  default     = "{{ production_space }}-mgmt"
   description = "The name of the mgmt space"
 }
 variable "create_bot_secrets_file" {

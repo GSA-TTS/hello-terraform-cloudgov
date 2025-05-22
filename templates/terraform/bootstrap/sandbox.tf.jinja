@@ -18,7 +18,7 @@ variable "create_bot_secrets_file" {
 
 locals {
   org_name      = "{{ cloud_gov_organization }}"
-  cf_space_name = "{{ cloud_gov_staging_space }}"
+  cf_space_name = "{{ sandbox_spaces | first }}"
   # s3_plan_name should be basic when holding production data, though basic-sandbox will make early iterations easier
   s3_plan_name = "basic-sandbox"
 }
