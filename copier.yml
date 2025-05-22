@@ -9,25 +9,61 @@ manage_spaces:
   type: bool
 
 cloud_gov_organization:
-  when: "{{manage_spaces}}"
   help: "What is the cloud.gov organization name?"
-  default: "my-org"
+  # If we're not managing spaces, it's likely they're working in a sandbox
+  # Otherwise, it's likely an agency-component-office-program org name
+  # TODO: Can we make the defaults more helpful for non-TTS orgs?
+  default: |-
+        {% if manage_spaces != true -%}
+            sandbox-gsa
+        {%- else -%}
+            gsa-tts-solutions-{{system_name}}
+        {%- endif %}
+  validator: "{% if cloud_gov_organization|length == 0 %}Must specify an org name{% endif %}"
   type: str
 
-# TODO: We should just ask for a space-separated list of spaces
-# and then designate which one is production
-
-cloud_gov_staging_space:
-  when: "{{manage_spaces}}"
-  help: "What is the cloud.gov staging space name?"
-  default: "staging"
+cloud_gov_spaces:
+  help: "Which space(s) in {{ cloud_gov_organization }} should be used?"
+  placeholder: |-
+        {% if manage_spaces != true -%}
+            firstname.lastname
+        {%- endif %}
+  default: |-
+        {% if manage_spaces == true -%}
+            dev staging production
+        {%- endif %}
+  validator: "{% if cloud_gov_spaces|length == 0 %}Must specify at least one space name{% endif %}"
   type: str
 
-cloud_gov_production_space:
-  when: "{{manage_spaces}}"
-  help: "What is the cloud.gov production space name?"
-  default: "production"
+spaces:
+  when: false
+  default: "{{ cloud_gov_spaces.split() }}"
+  type: yaml
+
+production_space:
+  help: "Which space is the production space?"
+  choices: |-
+        {% for space in spaces %}
+          - "{{ space }}"
+        {%- endfor %}
+  # The last one seems likely (and in the default "production" comes last)
+  default: "{{ spaces | last }}"
   type: str
+
+sandbox_spaces:
+  help: "Which spaces are sandbox spaces?"
+  choices: |-
+        {% set spaces = cloud_gov_spaces.split() -%}
+        {% for space in spaces %}
+          - "{{ space }}"
+        {%- endfor %}
+  # Spaces that look like "first.last" are likely candidates, select them by default
+  default: |-
+        {% for space in spaces if "." in space %}
+          - "{{ space }}"
+        {% endfor %}
+  multiselect: true
+  type: yaml
 
 applications:
   help: "Description of the applications (e.g., '[{\"name\": \"flask-api\", \"type\": \"flask\", \"port\": 5000}, {\"name\": \"express-web\", \"type\": \"express\", \"port\": 3000}]')"
