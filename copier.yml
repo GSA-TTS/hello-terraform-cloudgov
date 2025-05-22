@@ -72,6 +72,7 @@ applications:
       {"name": "frontend", "type": "astro", "buildpack": "static"}, 
       {"name": "backend", "type": "django", "buildpack": "python"}
     ]' 
+  multiline: true
   type: json
 
 _subdirectory: "templates/terraform"
