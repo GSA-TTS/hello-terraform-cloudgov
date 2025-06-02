@@ -1,5 +1,4 @@
 - [ ] Combine the sandbox and org bootstrap methods to remove exclusion complexity
-- [ ] Add patterns to the .gitignore
 - [ ] Install terraform `fmt --recursive` pre-commit hook
 - [ ] Reference application-local modules rather than reusing a generic app.tf
     - `hello-terraform-cloudgov` -> `hello-terraform-cloudgov-system`
