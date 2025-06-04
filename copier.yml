@@ -66,11 +66,11 @@ sandbox_spaces:
   type: yaml
 
 applications:
-  help: "Description of the applications (e.g., '[{\"name\": \"flask-api\", \"type\": \"flask\", \"port\": 5000}, {\"name\": \"express-web\", \"type\": \"express\", \"port\": 3000}]')"
+  help: "Description of the applications (e.g., '[{\"name\": \"frontend\", \"type\": \"astro\"}, {\"name\": \"backend\", \"type\": \"astro\"}]')"
   default:
     '[
-      {"name": "frontend", "type": "astro", "buildpack": "static"}, 
-      {"name": "backend", "type": "django", "buildpack": "python"}
+      {"name": "frontend", "type": "astro"}, 
+      {"name": "backend", "type": "astro"}
     ]' 
   multiline: true
   type: json
