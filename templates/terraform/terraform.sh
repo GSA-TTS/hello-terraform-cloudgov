@@ -2,7 +2,6 @@
 
 # TODO: De-railsify
 
-rmk_file="../config/master.key"
 cmd="plan"
 
 usage="
@@ -10,24 +9,22 @@ $0: Run terraform commands against a given environment
 
 Usage:
   $0 -h
-  $0 -e <ENV NAME> [-k <RAILS_MASTER_KEY>] [-f] [-c <TERRAFORM-CMD>] [-- <EXTRA CMD ARGUMENTS>]
+  $0 -e <ENV NAME> [-f] [-c <TERRAFORM-CMD>] [-- <EXTRA CMD ARGUMENTS>]
 
 Options:
 -h: show help and exit
 -e ENV_NAME: The name of the environment to run terraform against
--k RAILS_MASTER_KEY: RAILS_MASTER_KEY value. Defaults to contents of $rmk_file
 -f: Force, pass -auto-approve to all invocations of terraform
 -c TERRAFORM-CMD: command to run. Defaults to $cmd
 [<EXTRA CMD ARGUMENTS>]: arguments to pass as-is to terraform
 "
 
-rmk=`cat $rmk_file || echo -n ""`
 env=""
 force=""
 args_to_shift=0
 
 set -e
-while getopts ":he:k:fc:" opt; do
+while getopts ":he:fc:" opt; do
   case "$opt" in
     e)
       env=${OPTARG}
