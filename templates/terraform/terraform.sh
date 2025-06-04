@@ -66,7 +66,7 @@ if [[ ! -f "$env.tfvars" ]]; then
 fi
 
 # ensure we're logged in via cli
-cf spaces &> /dev/null || cf login -a api.fr.cloud.gov --sso
+cf orgs &> /dev/null || cf login -a api.fr.cloud.gov --sso
 
 tfm_needs_init=true
 if [[ -f .terraform/terraform.tfstate ]]; then
