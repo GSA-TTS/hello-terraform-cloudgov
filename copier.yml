@@ -101,7 +101,3 @@ _exclude:
 #   - production.tfvars
 #   {%- endif %}
 
-_tasks:
-  # Why isn't this showing any output
-  - when: "{{ _copier_operation == 'copy' }}"
-    command: "git init ."
