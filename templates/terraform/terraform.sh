@@ -90,4 +90,4 @@ fi
 echo "=============================================================================================================="
 echo "= Calling $cmd $force on the application infrastructure"
 echo "=============================================================================================================="
-terraform "$cmd" -var-file="$env.tfvars" -var rails_master_key="$rmk" $force "$@"
+terraform "$cmd" -var-file="$env.tfvars" $force "$@"
