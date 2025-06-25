@@ -2,8 +2,12 @@
 module "{{ application.name }}" {
   source         = "../{{ application.name }}/terraform"
   env            = var.env
-  cf_org_name    = var.cf_org_name
-  cf_space_name  = var.cf_space_name
+  cf_org_name    = local.cf_org_name
+  {% if manage_spaces %}
+  cf_space       = module.app_space
+  {% else %}
+  cf_space       = data.cloudfoundry_space.app_space
+  {% endif %}
 }
 
 {% endfor %}
