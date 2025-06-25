@@ -66,14 +66,14 @@ sandbox_spaces:
   type: yaml
 
 applications:
-  help: "Description of the applications (e.g., '[{\"name\": \"frontend\", \"type\": \"astro\"}, {\"name\": \"backend\", \"type\": \"astro\"}]')"
+  help: "Description of the applications (YAML list, e.g. - name: frontend\n  type: astro)"
   default:
-    '[
-      {"name": "frontend", "type": "astro"}, 
-      {"name": "backend", "type": "astro"}
-    ]' 
+    - name: frontend
+      type: astro
+    - name: backend
+      type: astro
   multiline: true
-  type: json
+  type: yaml
 
 _subdirectory: "templates/terraform"
 _exclude:
