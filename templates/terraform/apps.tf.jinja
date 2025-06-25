@@ -4,9 +4,10 @@ module "{{ application.name }}" {
   env            = var.env
   cf_org_name    = local.cf_org_name
   {% if manage_spaces %}
-  cf_space       = module.app_space
+  cf_space_name  = module.app_space.space_name
+  depends_on = [module.app_space]
   {% else %}
-  cf_space       = data.cloudfoundry_space.app_space
+  cf_space_name  = data.cloudfoundry_space.app_space
   {% endif %}
 }
 
