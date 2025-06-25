@@ -1,8 +1,11 @@
-# Deploy user settings
+{% if manage_spaces %}
+# Deploy user settings, for inclusion in roles on the space
 variable "cf_user" {
   type        = string
   description = "The user email or service account running the terraform"
 }
+{% endif %}
+
 
 # app_space settings
 variable "cf_space_name" {

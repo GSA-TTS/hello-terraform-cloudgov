@@ -1,6 +1,7 @@
 cf_space_name   = "{{ space }}"
 env             = "{{ space }}"
 
+{% if manage_spaces %}
 {% if space != production_space -%}
 # adjust defaults for a non-production space
 allow_space_ssh = true
@@ -13,4 +14,5 @@ custom_domain_name = null
 space_auditors = [
   # enter cloud.gov usernames that should have access to audit logs
 ]
+{% endif -%}
 {% endif -%}
