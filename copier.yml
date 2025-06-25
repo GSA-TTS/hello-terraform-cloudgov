@@ -1,6 +1,6 @@
 system_name:
   help: "What is the system name?"
-  default: "my-system"
+  placeholder: "my-system"
   type: str
 
 manage_spaces:
@@ -17,7 +17,7 @@ cloud_gov_organization:
         {% if manage_spaces != true -%}
             sandbox-gsa
         {%- else -%}
-            gsa-tts-solutions-{{system_name}}
+            gsa-tts-{{system_name}}
         {%- endif %}
   validator: "{% if cloud_gov_organization|length == 0 %}Must specify an org name{% endif %}"
   type: str
