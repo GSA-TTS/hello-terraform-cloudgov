@@ -37,6 +37,21 @@ These steps only need to be run once per project.
 1. Run `./apply.sh` and verify the plan before entering `yes`
 1. Commit any changes to `imports.tf`
 
+## Manually deploying to an environment
+
+### Pre-requisites:
+
+1. Someone on the team has run the [Initial project setup](#initial-project-setup) steps and `imports.tf` is up-to-date on your branch.
+2. You have run `(cd bootstrap && ./apply.sh)` to set up your local machine ready to reference the remote state bucket.
+{% if manage_spaces %}2. You are included in the list of users in `bootstrap/users.auto.tfvars` and `bootstrap/imports.tf`{% endif %} 
+<!-- TODO: Is that 👆 instruction even necessary? -->
+
+### Steps:
+
+```bash
+$ ./terraform.sh -e [env-name] -c apply
+```
+
 ## Set up a sandbox environment or review app
 
 ### Pre-requisites:
