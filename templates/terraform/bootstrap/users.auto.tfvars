@@ -1,5 +1,9 @@
 terraform_users = [
-  # add your terraform_users list here: example values:
+  # Add terraform users here. These are individuals who should be able
+  # to access the terraform state bucket, eg to make deployments
+  # or debug terraform state.
+
+  # example values:
   # "team.member@gsa.gov",
   # "cf_user-guid-value-for-space-developer-service-account",
 ]

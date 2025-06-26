@@ -9,7 +9,7 @@ won't manage spaces or roles, and will cram everything into one space.
 
 When you are ready to move the system to a non-sandbox cloud.gov organization, [update your answers to the copier questions](https://github.com/GSA-TTS/hello-terraform-cloudgov/blob/main/README.md#updating-the-module-later).
 
-You will probably also have to update your answers to the copier questions for your CI generator of choice to add production terraform plan and apply steps to your workflow.
+You will probably also have to update your answers to the copier questions for your CICD generator of choice to add production terraform plan and apply steps to your workflow.
 {% endif %}
 ## Terraform State Credentials
 
@@ -20,49 +20,91 @@ to create local credentials files so developers can use that s3 bucket to create
 
 These steps only need to be run once per project.
 
-1. `cd bootstrap`{% if manage_spaces %}
-1. Add any users who should have access to the terraform state bucket to `users.auto.tfvars`{% endif %}
-1. Run `./apply.sh -var create_bot_secrets_file=true`
-1. Add `imports.tf` to git and commit the changes
-1. TODO: Setup your CI/CD Pipeline to run terraform and deploy your staging and production environments
-    1. Copy backend credentials from `/terraform/secrets.backend.tfvars` to your CI/CD secrets using the instructions in the base README
-    1. Copy the cf_user and cf_password credentials from `/terraform/secrets.cicd.tfvars` to your CI/CD secrets using the instructions in the base README
-1. Delete the two secrets files
+{% if manage_spaces %}
+1. Add any users approved to perform manual deployments to `bootstrap/users.auto.tfvars`{% endif %}
+1. Run `(cd terraform && ./apply.sh)`
+1. Add `bootstrap/imports.tf` to git and commit the changes
 
 ### To make changes to the bootstrap module
 
-*This should not be necessary in most cases{% if manage_spaces %}, other than adding or removing users who should have access to the state bucket in `bootstrap/users.auto.tfvars`{% endif %}*
+*This should not be necessary in most cases{% if manage_spaces %}, other than adding or removing users who should have direct access to the state bucket in `bootstrap/users.auto.tfvars`{% endif %}*
 
 1. Make your changes
-1. Run `./apply.sh` and verify the plan before entering `yes`
+1. Run `(cd bootstrap && ./apply.sh)` and verify the plan before entering `yes`
 1. Commit any changes to `imports.tf`
 
 ## Manually deploying to an environment
 
-### Pre-requisites:
+### Pre-requisites
 
-1. Someone on the team has run the [Initial project setup](#initial-project-setup) steps and `imports.tf` is up-to-date on your branch.
-2. You have run `(cd bootstrap && ./apply.sh)` to set up your local machine ready to reference the remote state bucket.
-{% if manage_spaces %}2. You are included in the list of users in `bootstrap/users.auto.tfvars` and `bootstrap/imports.tf`{% endif %} 
-<!-- TODO: Is that 👆 instruction even necessary? -->
+1. Someone with access has done the [Initial project setup](#initial-project-setup) steps and `imports.tf` is up-to-date on your branch.
+1. You've previously been added to `bootstrap/users.auto.tfvars`.
+1. You've run `(cd bootstrap && ./apply.sh)` to make your local environment ready to reference the remote state bucket.
+{% if manage_spaces %}1. You are included in the list of users in `bootstrap/users.auto.tfvars` and `bootstrap/imports.tf` 
+1. You've customized the value of `cf_user` in the `local.auto.tfvars` file with your email address{% endif %}
+<!-- TODO: Is that 👆 instruction even necessary? Should they have access to the space where the terraform S3 bucket lives? -->
 
-### Steps:
+### Steps
 
 ```bash
 $ ./terraform.sh -e [env-name] -c apply
 ```
 
-## Set up a sandbox environment or review app
+If you find you need to repetitively enter missing values for variables, you may instead set them in the `dev.auto.tfvars` file, which will be
+ignored by git.
+<!-- TODO: Ensure this is true via a rollup .gitignore file that this module supplies -->
 
-### Pre-requisites:
+## Configuring automatic deployments in a CI/CD pipeline
+
+### Pre-requisites
+1. Someone on the team has run the [Initial project setup](#initial-project-setup) steps and `imports.tf` is up-to-date on your branch.
+1. You've previously been added to `bootstrap/users.auto.tfvars`.
+
+### Steps
+1. Run `(cd bootstrap && ./apply.sh -var create_bot_secrets_file=true`)
+1. Copy the backend credentials from `secrets.backend.tfvars` to your CI/CD secrets using the instructions referenced in [the base README](../README.md)
+1. Copy the `cf_user` and `cf_password` credentials from `secrets.cicd.tfvars` to your CI/CD secrets using the instructions referenced in [the base README](../README.md)
+1. Delete the two secrets files
+<!-- TODO: Reminder for later: The base hello-ato README should link to a dedicated 
+page provided by notional [hello-cicd-gha-terraform|hello-cicd-gitlab-terraform] Copier 
+templates -->
+
+## Customizing environments
+
+<!-- TODO: We can generate relative links to the actual .tfvars files for convenience here -->
+
+There's a `.tfvars` file named for each of the environments in which this 
+system will be deployed. (On cloud.gov the environments are 1:1 with 
+space names.) Use those files to customize the values of variables that
+specify the # of instances, memory, service plans, etc which vary by
+environment. For example, a `prod.tfvars` file might specify a
+larger number of instances and more memory, whereas non-prod environments
+omit those values from .tfvars and just use the default values.
+
+Note that each `.tfvars` file also supplies a required value for the "env" variable. 
+You can use that value to key the deployment of environment-
+specific resources in your terraform. For example, perhaps you want to
+deploy a mock service only in non-production environments. To do that, 
+you can use the "count" argument on your resources and modules. For 
+example:
+
+```hcl
+module "mymockservice" {
+  count = var.env != "prod" ? 1 : 0
+  # other arguments
+}
+```
+
+## Setting up a sandbox environment or review app
+
+### Pre-requisites
 
 1. Someone on the team has run the [Initial project setup](#initial-project-setup) steps and `imports.tf` is up-to-date on your branch.
 {% if manage_spaces %}1. You are included in the list of users in `bootstrap/users.auto.tfvars` and `bootstrap/imports.tf`{% endif %}
 
-### Steps:
+### Steps
 
-{% if manage_spaces %}1. Create a new `sandbox-<NAME>.tfvars` file to hold variable values for your environment. A good starting point is copying `staging.tfvars` and editing it with your values
-1. Add a `cf_user = "your.email@agency.gov"` line to the `sandbox-<NAME>.tfvars` file{% endif %}
+{% if manage_spaces %}1. Create a new `sandbox-<NAME>.tfvars` file to hold variable values for your environment. A good starting point is copying `staging.tfvars` and editing it with your values{% endif %}
 
 1. Run terraform plan with:
     ```bash
@@ -74,7 +116,7 @@ $ ./terraform.sh -e [env-name] -c apply
     ./terraform.sh -e {{ "sandbox-<NAME>" if manage_spaces else "staging" }} -c apply
     ```
 
-1. {{ "Optional: tear down the sandbox if" if manage_spaces else "Destroy the app when" }} it does not need to be used anymore
+1. {{ "Optional: tear down the sandbox if" if manage_spaces else "Destroy the sandbox content when" }} it does not need to be used anymore
     ```bash
     ./terraform.sh -e {{ "sandbox-<NAME>" if manage_spaces else "staging" }} -c destroy
     ```
