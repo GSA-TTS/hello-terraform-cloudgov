@@ -75,29 +75,28 @@ applications:
   multiline: true
   type: yaml
 
-_subdirectory: "templates/terraform"
+_answers_file: ".copier-answers.hello-ato.yml"
+_subdirectory: "template"
 _exclude:
   # When managing an org's spaces, exclude the sandbox bootstrap files
-  - "{% if manage_spaces == true %}bootstrap/sandbox.tf{% endif %}"
-  - "{% if manage_spaces == true %}bootstrap/templates/sandbox_imports.tf.tftpl{% endif %}"
+  - "{% if manage_spaces == true %}terraform/bootstrap/sandbox.tf{% endif %}"
+  - "{% if manage_spaces == true %}terraform/bootstrap/templates/sandbox_imports.tf.tftpl{% endif %}"
   # When using a sandbox, exclude the org bootstrap files and production-specific variables
-  - "{% if manage_spaces != true %}bootstrap/org.tf{% endif %}"
-  - "{% if manage_spaces != true %}bootstrap/templates/org_imports.tf.tftpl{% endif %}"
-  - "{% if manage_spaces != true %}bootstrap/users.auto.tfvars{% endif %}"
-  - "{% if manage_spaces != true %}production.tfvars{% endif %}"
+  - "{% if manage_spaces != true %}terraform/bootstrap/org.tf{% endif %}"
+  - "{% if manage_spaces != true %}terraform/bootstrap/templates/org_imports.tf.tftpl{% endif %}"
+  - "{% if manage_spaces != true %}terraform/bootstrap/users.auto.tfvars{% endif %}"
 
 # # A DRYer version of the above... doesn't work!
 # # See discussion at https://github.com/orgs/copier-org/discussions/2144
 # _exclude: |
 #   {%- if manage_spaces == true %}
 #   # When managing an org's spaces, exclude the sandbox bootstrap files
-#   - bootstrap/sandbox.tf
-#   - bootstrap/templates/sandbox_imports.tf.tftpl
+#   - terraform/bootstrap/sandbox.tf
+#   - terraform/bootstrap/templates/sandbox_imports.tf.tftpl
 #   {%- else %}
 #   # When using a sandbox, exclude the org bootstrap files and production-specific variables
-#   - bootstrap/org.tf
-#   - bootstrap/templates/org_imports.tf.tftpl
-#   - bootstrap/users.auto.tfvars
-#   - production.tfvars
+#   - terraform/bootstrap/org.tf
+#   - terraform/bootstrap/templates/org_imports.tf.tftpl
+#   - terraform/bootstrap/users.auto.tfvars
 #   {%- endif %}
 
