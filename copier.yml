@@ -1,6 +1,6 @@
 system_name:
   help: "What is the system name?"
-  default: "my-system"
+  placeholder: "my-system"
   type: str
 
 manage_spaces:
@@ -17,7 +17,7 @@ cloud_gov_organization:
         {% if manage_spaces != true -%}
             sandbox-gsa
         {%- else -%}
-            gsa-tts-solutions-{{system_name}}
+            gsa-tts-{{system_name}}
         {%- endif %}
   validator: "{% if cloud_gov_organization|length == 0 %}Must specify an org name{% endif %}"
   type: str
@@ -66,14 +66,14 @@ sandbox_spaces:
   type: yaml
 
 applications:
-  help: "Description of the applications (e.g., '[{\"name\": \"flask-api\", \"type\": \"flask\", \"port\": 5000}, {\"name\": \"express-web\", \"type\": \"express\", \"port\": 3000}]')"
+  help: "Description of the applications (YAML list, e.g. - name: frontend\n  type: astro)"
   default:
-    '[
-      {"name": "frontend", "type": "astro", "buildpack": "static"}, 
-      {"name": "backend", "type": "django", "buildpack": "python"}
-    ]' 
+    - name: frontend
+      type: astro
+    - name: backend
+      type: astro
   multiline: true
-  type: json
+  type: yaml
 
 _subdirectory: "templates/terraform"
 _exclude:
@@ -101,7 +101,3 @@ _exclude:
 #   - production.tfvars
 #   {%- endif %}
 
-_tasks:
-  # Why isn't this showing any output
-  - when: "{{ _copier_operation == 'copy' }}"
-    command: "git init ."

@@ -1,0 +1,18 @@
+{% for application in applications %}
+module "{{ application.name }}" {
+  source         = "../{{ application.name }}/terraform"
+  
+  # Generate a unique name based on the system name, application name, and environment
+  # Replace any non-alphanumeric characters with a hyphen, convert to lowercase, and 
+  # ensure compatibility with hostname requirements
+  name = substr(trim(replace(lower("{{ system_name }}-{{ application.name }}-${var.env}"), "/[^a-z0-9-]/", "-"), "-"), 0, 63)
+  cf_org_name    = local.cf_org_name
+  {% if manage_spaces %}
+  cf_space_name  = module.app_space.space_name
+  depends_on = [module.app_space]
+  {% else %}
+  cf_space_name  = data.cloudfoundry_space.app_space
+  {% endif %}
+}
+
+{% endfor %}

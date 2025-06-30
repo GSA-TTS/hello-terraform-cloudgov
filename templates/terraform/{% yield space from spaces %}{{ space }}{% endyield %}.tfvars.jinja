@@ -1,9 +1,7 @@
 cf_space_name   = "{{ space }}"
 env             = "{{ space }}"
-# TODO: Loop and generate one non-colliding hostname key per application?
-# host_names must be unique across cloud.gov, default is "{{ '{{ application.name }}-${var.env}' }}"
-host_name = null
 
+{% if manage_spaces %}
 {% if space != production_space -%}
 # adjust defaults for a non-production space
 allow_space_ssh = true
@@ -13,13 +11,8 @@ space_developers = [
 {% else -%}
 # adjust defaults for a production space
 custom_domain_name = null
-web_instances      = 2
-web_memory         = "512M"
-rds_plan_name      = "TKTK-production-rds-plan"
-{% if has_storage %}s3_plan_name       = "basic"{% endif -%}
-{% if has_redis %}redis_plan_name    = "TKTK-production-redis-plan"{% endif -%}
-{% if has_redis %}worker_memory      = "512M"{% endif -%}
 space_auditors = [
   # enter cloud.gov usernames that should have access to audit logs
 ]
+{% endif -%}
 {% endif -%}
