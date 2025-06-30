@@ -75,7 +75,7 @@ applications:
   multiline: true
   type: yaml
 
-_answers_file: ".copier-answers.hello-ato.yml"
+_answers_file: ".copier-answers.hello-terraform-cloudgov.yml"
 _subdirectory: "template"
 _exclude:
   # When managing an org's spaces, exclude the sandbox bootstrap files
