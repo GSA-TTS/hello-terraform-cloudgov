@@ -1,6 +1,6 @@
 {% for application in applications %}
 module "{{ application.name }}" {
-  source         = "../{{ application.name }}/terraform"
+  source         = "./apps/{{ application.name }}"
   
   # Generate a unique name based on the system name, application name, and environment
   # Replace any non-alphanumeric characters with a hyphen, convert to lowercase, and 
